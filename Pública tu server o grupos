@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupos WhatsApp & Discord</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 min-h-screen text-white">
+    <div id="app"></div>
+
+    <script>
+        // Sistema de almacenamiento simple
+        const DB = {
+            get: (key) => {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            },
+            set: (key, value) => {
+                localStorage.setItem(key, JSON.stringify(value));
+            },
+            delete: (key) => {
+                localStorage.removeItem(key);
+            }
+        };
+
+        // Estado global
+        let state = {
+            currentUser: DB.get('currentSession'),
+            users: DB.get('users') || {},
+            groups: DB.get('groups') || { whatsapp: [], discord: [] },
+            view: 'home',
+            editingGroup: null,
+            formData: { username: '', password: '' },
+            groupForm: { name: '', link: '', description: '', type: 'whatsapp' }
+        };
+
+        // Funciones de autenticación
+        function register() {
+            const { username, password } = state.formData;
+            if (!username || !password) {
+                alert('Por favor llena todos los campos');
+                return;
+            }
+            if (state.users[username]) {
+                alert('Este usuario ya existe');
+                return;
+            }
+            state.users[username] = { password, groups: [] };
+            DB.set('users', state.users);
+            alert('¡Cuenta creada exitosamente! Ahora inicia sesión');
+            state.view = 'login';
+            state.formData = { username: '', password: '' };
+            render();
+        }
+
+        function login() {
+            const { username, password } = state.formData;
+            if (!username || !password) {
+                alert('Por favor llena todos los campos');
+                return;
+            }
+            const user = state.users[username];
+            if (!user || user.password !== password) {
+                alert('Usuario o contraseña incorrectos');
+                return;
+            }
+            state.currentUser = username;
+            DB.set('currentSession', username);
+            state.view = 'dashboard';
+            state.formData = { username: '', password: '' };
+            render();
+        }
+
+        function logout() {
+            state.currentUser = null;
+            DB.delete('currentSession');
+            state.view = 'home';
+            render();
+        }
+
+        // Funciones de grupos
+        function addGroup() {
+            const { name, link, description, type } = state.groupForm;
+            if (!name || !link) {
+                alert('Por favor llena nombre y enlace');
+                return;
+            }
+
+            const newGroup = {
+                id: Date.now(),
+                name,
+                link,
+                description,
+                type,
+                owner: state.currentUser,
+                createdAt: new Date().toLocaleDateString()
+            };
+
+            if (state.editingGroup) {
+                const index = state.groups[type].findIndex(g => g.id === state.editingGroup.id);
+                state.groups[type][index] = { ...newGroup, id: state.editingGroup.id };
+                state.editingGroup = null;
+            } else {
+                state.groups[type].push(newGroup);
+            }
+
+            DB.set('groups', state.groups);
+            state.groupForm = { name: '', link: '', description: '', type: 'whatsapp' };
+            alert('¡Grupo guardado exitosamente!');
+            render();
+        }
+
+        function deleteGroup(id, type) {
+            if (!confirm('¿Seguro que quieres eliminar este grupo?')) return;
+            state.groups[type] = state.groups[type].filter(g => g.id !== id);
+            DB.set('groups', state.groups);
+            render();
+        }
+
+        function editGroup(group) {
+            state.editingGroup = group;
+            state.groupForm = {
+                name: group.name,
+                link: group.link,
+                description: group.description,
+                type: group.type
+            };
+            render();
+        }
+
+        // Componentes de UI
+        function Header() {
+            return `
+                <nav class="bg-black bg-opacity-50 backdrop-blur-lg border-b border-purple-500">
+                    <div class="max-w-7xl mx-auto px-4 py-4">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl">💬</span>
+                                <h1 class="text-xl font-bold">Grupos Community</h1>
+                            </div>
+                            <div class="flex space-x-2">
+                                ${state.currentUser ? `
+                                    <button onclick="state.view='home'; render()" class="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700">Inicio</button>
+                                    <button onclick="state.view='dashboard'; render()" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700">Mi Panel</button>
+                                    <button onclick="logout()" class="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700">Salir</button>
+                                ` : `
+                                    <button onclick="state.view='login'; render()" class="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700">Iniciar Sesión</button>
+                                    <button onclick="state.view='register'; render()" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700">Registrarse</button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            `;
+        }
+
+        function HomePage() {
+            const whatsappGroups = state.groups.whatsapp;
+            const discordGroups = state.groups.discord;
+
+            return `
+                <div class="max-w-7xl mx-auto px-4 py-8">
+                    <div class="text-center mb-12">
+                        <h2 class="text-4xl font-bold mb-4 bg-gradient-to-r from-green-400 to-purple-500 bg-clip-text text-transparent">
+                            Descubre y Únete a Grupos
+                        </h2>
+                        <p class="text-gray-300">Encuentra comunidades de WhatsApp y Discord</p>
+                    </div>
+
+                    <!-- WhatsApp Groups -->
+                    <div class="mb-12">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <span class="text-4xl">📱</span>
+                            <h3 class="text-3xl font-bold text-green-400">Grupos de WhatsApp</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${whatsappGroups.length === 0 ? 
+                                '<p class="text-gray-400 col-span-full text-center py-8">No hay grupos de WhatsApp todavía. ¡Sé el primero en publicar!</p>' :
+                                whatsappGroups.map(group => GroupCard(group, 'whatsapp')).join('')
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Discord Groups -->
+                    <div>
+                        <div class="flex items-center space-x-3 mb-6">
+                            <span class="text-4xl">🎮</span>
+                            <h3 class="text-3xl font-bold text-purple-400">Servidores de Discord</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${discordGroups.length === 0 ? 
+                                '<p class="text-gray-400 col-span-full text-center py-8">No hay servidores de Discord todavía. ¡Sé el primero en publicar!</p>' :
+                                discordGroups.map(group => GroupCard(group, 'discord')).join('')
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function GroupCard(group, type) {
+            const bgColor = type === 'whatsapp' ? 'from-green-600 to-green-800' : 'from-purple-600 to-purple-800';
+            return `
+                <div class="bg-gradient-to-br ${bgColor} rounded-xl p-6 shadow-2xl transform hover:scale-105 transition">
+                    <h4 class="text-xl font-bold mb-2">${group.name}</h4>
+                    <p class="text-gray-200 text-sm mb-4">${group.description || 'Sin descripción'}</p>
+                    <div class="text-xs text-gray-300 mb-4">
+                        <p>Por: ${group.owner}</p>
+                        <p>${group.createdAt}</p>
+                    </div>
+                    <a href="${group.link}" target="_blank" class="block w-full text-center bg-white text-gray-900 font-bold py-3 rounded-lg hover:bg-gray-200 transition">
+                        Unirse Ahora
+                    </a>
+                </div>
+            `;
+        }
+
+        function LoginPage() {
+            return `
+                <div class="max-w-md mx-auto px-4 py-16">
+                    <div class="bg-black bg-opacity-50 backdrop-blur-lg rounded-2xl p-8 border border-purple-500">
+                        <h2 class="text-3xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+                        <div class="space-y-4">
+                            <input 
+                                type="text" 
+                                placeholder="Usuario" 
+                                value="${state.formData.username}"
+                                oninput="state.formData.username = this.value"
+                                class="w-full px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <input 
+                                type="password" 
+                                placeholder="Contraseña" 
+                                value="${state.formData.password}"
+                                oninput="state.formData.password = this.value"
+                                class="w-full px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <button onclick="login()" class="w-full py-3 bg-green-600 rounded-lg font-bold hover:bg-green-700 transition">
+                                Entrar
+                            </button>
+                            <p class="text-center text-gray-400">
+                                ¿No tienes cuenta? 
+                                <button onclick="state.view='register'; render()" class="text-purple-400 hover:underline">Regístrate</button>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function RegisterPage() {
+            return `
+                <div class="max-w-md mx-auto px-4 py-16">
+                    <div class="bg-black bg-opacity-50 backdrop-blur-lg rounded-2xl p-8 border border-purple-500">
+                        <h2 class="text-3xl font-bold mb-6 text-center">Crear Cuenta</h2>
+                        <div class="space-y-4">
+                            <input 
+                                type="text" 
+                                placeholder="Usuario" 
+                                value="${state.formData.username}"
+                                oninput="state.formData.username = this.value"
+                                class="w-full px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <input 
+                                type="password" 
+                                placeholder="Contraseña" 
+                                value="${state.formData.password}"
+                                oninput="state.formData.password = this.value"
+                                class="w-full px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <button onclick="register()" class="w-full py-3 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 transition">
+                                Registrarse
+                            </button>
+                            <p class="text-center text-gray-400">
+                                ¿Ya tienes cuenta? 
+                                <button onclick="state.view='login'; render()" class="text-purple-400 hover:underline">Inicia sesión</button>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function DashboardPage() {
+            const userGroups = [...state.groups.whatsapp, ...state.groups.discord].filter(g => g.owner === state.currentUser);
+            
+            return `
+                <div class="max-w-6xl mx-auto px-4 py-8">
+                    <h2 class="text-3xl font-bold mb-8">Panel de Control - ${state.currentUser}</h2>
+                    
+                    <!-- Formulario para agregar grupo -->
+                    <div class="bg-black bg-opacity-50 backdrop-blur-lg rounded-2xl p-6 mb-8 border border-purple-500">
+                        <h3 class="text-2xl font-bold mb-4">${state.editingGroup ? 'Editar' : 'Publicar Nuevo'} Grupo</h3>
+                        <div class="grid gap-4">
+                            <select 
+                                onchange="state.groupForm.type = this.value; render()"
+                                class="px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            >
+                                <option value="whatsapp" ${state.groupForm.type === 'whatsapp' ? 'selected' : ''}>WhatsApp</option>
+                                <option value="discord" ${state.groupForm.type === 'discord' ? 'selected' : ''}>Discord</option>
+                            </select>
+                            <input 
+                                type="text" 
+                                placeholder="Nombre del grupo" 
+                                value="${state.groupForm.name}"
+                                oninput="state.groupForm.name = this.value"
+                                class="px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <input 
+                                type="url" 
+                                placeholder="Link del grupo (https://...)" 
+                                value="${state.groupForm.link}"
+                                oninput="state.groupForm.link = this.value"
+                                class="px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            <textarea 
+                                placeholder="Descripción (opcional)" 
+                                oninput="state.groupForm.description = this.value"
+                                class="px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
+                            >${state.groupForm.description}</textarea>
+                            <div class="flex gap-4">
+                                <button onclick="addGroup()" class="flex-1 py-3 bg-green-600 rounded-lg font-bold hover:bg-green-700 transition">
+                                    ${state.editingGroup ? '✓ Guardar Cambios' : '+ Publicar Grupo'}
+                                </button>
+                                ${state.editingGroup ? `
+                                    <button onclick="state.editingGroup = null; state.groupForm = { name: '', link: '', description: '', type: 'whatsapp' }; render()" class="px-6 py-3 bg-gray-600 rounded-lg font-bold hover:bg-gray-700 transition">
+                                        Cancelar
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de grupos del usuario -->
+                    <div class="bg-black bg-opacity-50 backdrop-blur-lg rounded-2xl p-6 border border-purple-500">
+                        <h3 class="text-2xl font-bold mb-4">Mis Grupos Publicados (${userGroups.length})</h3>
+                        ${userGroups.length === 0 ? 
+                            '<p class="text-gray-400 text-center py-8">No has publicado ningún grupo todavía</p>' :
+                            `<div class="space-y-4">
+                                ${userGroups.map(group => `
+                                    <div class="bg-gray-800 rounded-lg p-4 flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <span class="px-3 py-1 rounded-full text-xs font-bold ${group.type === 'whatsapp' ? 'bg-green-600' : 'bg-purple-600'}">
+                                                    ${group.type === 'whatsapp' ? '📱 WhatsApp' : '🎮 Discord'}
+                                                </span>
+                                                <h4 class="font-bold text-lg">${group.name}</h4>
+                                            </div>
+                                            <p class="text-gray-300 text-sm mb-2">${group.description || 'Sin descripción'}</p>
+                                            <a href="${group.link}" target="_blank" class="text-blue-400 text-sm hover:underline break-all">${group.link}</a>
+                                            <p class="text-xs text-gray-500 mt-2">${group.createdAt}</p>
+                                        </div>
+                                        <div class="flex space-x-2 ml-4">
+                                            <button onclick='editGroup(${JSON.stringify(group).replace(/'/g, "&apos;")})' class="p-2 bg-blue-600 rounded-lg hover:bg-blue-700">
+                                                ✏️
+                                            </button>
+                                            <button onclick="deleteGroup(${group.id}, '${group.type}')" class="p-2 bg-red-600 rounded-lg hover:bg-red-700">
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        // Función principal de renderizado
+        function render() {
+            const views = {
+                home: HomePage,
+                login: LoginPage,
+                register: RegisterPage,
+                dashboard: DashboardPage
+            };
+
+            document.getElementById('app').innerHTML = `
+                ${Header()}
+                ${views[state.view]()}
+            `;
+        }
+
+        // Inicializar app
+        render();
+    </script>
+</body>
+</html>
