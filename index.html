@@ -377,6 +377,42 @@
         }
 
         render();
+        const DB = {
+    get: key => {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    },
+    set: (key, value) => localStorage.setItem(key, JSON.stringify(value))
+};
+
+let state = {
+    groups: DB.get('groups') || { whatsapp: [], discord: [] },
+   
+};
+        function addGroup(name, link, type) {
+    if (!name || !link) return alert('Llena nombre y enlace');
+    
+    const g = { id: Date.now(), name, link, type };
+    state.groups[type].push(g);
+    DB.set('groups', state.groups);
+
+    // Contador de publicaciones
+    let total = DB.get('totalPosts') || 0;
+    total++;
+    DB.set('totalPosts', total);
+
+    render();
+        }
+        function GroupCard(g) {
+    const color = g.type === 'whatsapp' ? 'green' : 'purple';
+    return `
+        <div class="bg-gray-800 p-4 rounded mb-2 border-2 border-${color}-500">
+            <strong>[${g.type.toUpperCase()}]</strong> ${g.name} 
+            <a href="${g.link}" target="_blank" class="text-blue-400">Unirse</a>
+        </div>
+    `;
+        }
+        render();
     </script>
 </body>
 </html>
