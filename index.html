@@ -3,24 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Grupos WhatsApp y Discord Públicos 2025 | Únete Gratis</title>
+<title>Grupos WhatsApp y Discord Públicos | Únete Gratis</title>
 <meta name="description" content="Descubre y únete a grupos de WhatsApp y servidores de Discord públicos. Comunidades de gaming, estudio, anime, música y más. Publicar grupos gratis.">
-<meta name="keywords" content="grupos whatsapp, grupos whatsapp publicos, discord servers, servidores discord, comunidades whatsapp, grupos discord publicos, unirse grupos whatsapp, enlaces grupos">
 <meta name="author" content="ᵛˣᴊʜᴏɴᴀᴛʜx15">
-<meta name="robots" content="index, follow">
-
-<!-- Open Graph / Facebook -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="Grupos WhatsApp y Discord Públicos | Grupos Community">
-<meta property="og:description" content="Descubre grupos públicos de WhatsApp y Discord. Únete a comunidades de gaming, estudio, anime y más.">
-<meta property="og:site_name" content="Grupos Community">
-
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Grupos WhatsApp y Discord Públicos">
-<meta name="twitter:description" content="Encuentra y únete a las mejores comunidades de WhatsApp y Discord.">
-
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
@@ -32,12 +17,11 @@
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-purple-900 to-black min-h-screen text-white">
 <div id="app"></div>
-
 <script>
 // --- LocalStorage y estado ---
 const DB = {
     get: k => { const d = localStorage.getItem(k); return d ? JSON.parse(d) : null; },
-    set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+    set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
     delete: k => localStorage.removeItem(k)
 };
 
@@ -47,186 +31,217 @@ let state = {
     groups: DB.get('groups') || { whatsapp: [], discord: [] },
     view: 'home',
     edit: null,
-    form: { username: '', password: '' },
-    gform: { name: '', link: '', desc: '', cat: '', type: 'whatsapp' }
+    form: { username:'', password:'' },
+    gform: { name:'', link:'', desc:'', cat:'', type:'whatsapp' }
 };
 
-// --- Funciones de registro, login y logout ---
+// --- Registro / Login / Logout ---
 function register() {
     const { username, password } = state.form;
-    if (!username || !password) return alert('⚠️ Llena todos los campos');
-    if (state.users[username]) return alert('⚠️ Usuario ya existe');
+    if(!username||!password) return alert('⚠️ Llena todos los campos');
+    if(state.users[username]) return alert('⚠️ Usuario ya existe');
     state.users[username] = { password };
     DB.set('users', state.users);
-    alert('✅ ¡Cuenta creada! 🎉 Ahora inicia sesión');
-    state.view = 'login';
-    state.form = { username: '', password: '' };
+    alert('✅ Cuenta creada! Ahora inicia sesión');
+    state.view='login';
+    state.form={username:'',password:''};
     render();
 }
 
 function login() {
     const { username, password } = state.form;
-    if (!username || !password) return alert('⚠️ Llena todos los campos');
+    if(!username||!password) return alert('⚠️ Llena todos los campos');
     const u = state.users[username];
-    if (!u || u.password !== password) return alert('❌ Usuario o contraseña incorrectos');
-    state.user = username;
-    DB.set('session', username);
-    state.view = 'dashboard';
-    state.form = { username: '', password: '' };
+    if(!u||u.password!==password) return alert('❌ Usuario o contraseña incorrectos');
+    state.user=username;
+    DB.set('session',username);
+    state.view='dashboard';
+    state.form={username:'',password:''};
     render();
 }
 
 function logout() {
-    state.user = null;
+    state.user=null;
     DB.delete('session');
-    state.view = 'home';
+    state.view='home';
     render();
 }
 
-// --- Funciones de grupos (nuevo) ---
+// --- Grupos ---
 function addGroup() {
     const { name, link, desc, cat, type } = state.gform;
-    if (!name || !link) return alert('⚠️ Llena nombre y enlace');
-    const g = {
-        id: Date.now(),
-        name, link, desc, cat: cat || 'General', type,
-        owner: state.user,
-        date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-    };
-    if (state.edit) {
-        const i = state.groups[type].findIndex(x => x.id === state.edit.id);
-        state.groups[type][i] = { ...g, id: state.edit.id };
-        state.edit = null;
-    } else {
+    if(!name||!link) return alert('⚠️ Llena nombre y enlace');
+    const g={id:Date.now(),name,link,desc,cat:cat||'General',type,owner:state.user,
+        date:new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})};
+    if(state.edit){
+        const i = state.groups[type].findIndex(x=>x.id===state.edit.id);
+        state.groups[type][i]={...g,id:state.edit.id};
+        state.edit=null;
+    }else{
         state.groups[type].push(g);
     }
-    DB.set('groups', state.groups);
-
-    // --- Contador de publicaciones ---
-    let total = DB.get('totalPosts') || 0;
+    DB.set('groups',state.groups);
+    let total = DB.get('totalPosts')||0;
     total++;
-    DB.set('totalPosts', total);
-
-    state.gform = { name: '', link: '', desc: '', cat: '', type: 'whatsapp' };
+    DB.set('totalPosts',total);
+    state.gform={name:'',link:'',desc:'',cat:'',type:'whatsapp'};
     alert('✅ ¡Grupo publicado!');
     render();
 }
 
-function deleteGroup(id, type) {
-    if (!confirm('⚠️ ¿Eliminar grupo?')) return;
-    state.groups[type] = state.groups[type].filter(g => g.id !== id);
-    DB.set('groups', state.groups);
+function deleteGroup(id,type){
+    if(!confirm('⚠️ ¿Eliminar grupo?')) return;
+    state.groups[type] = state.groups[type].filter(g=>g.id!==id);
+    DB.set('groups',state.groups);
     alert('🗑️ Grupo eliminado');
     render();
 }
 
-function editGroup(g) {
-    state.edit = g;
-    state.gform = { name: g.name, link: g.link, desc: g.desc, cat: g.cat, type: g.type };
+function editGroup(g){
+    state.edit=g;
+    state.gform={name:g.name,link:g.link,desc:g.desc,cat:g.cat,type:g.type};
     window.scrollTo(0,0);
     render();
 }
 
-// --- Funciones de renderizado ---
-function Header() {
-    return `
-        <nav class="bg-black bg-opacity-60 backdrop-blur-xl border-b-2 border-purple-500 sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center flex-wrap gap-3">
-                <div class="flex items-center space-x-3">
-                    <span class="text-3xl animate-float">💬</span>
-                    <div>
-                        <h1 class="text-xl md:text-2xl font-black glow">Grupos Community</h1>
-                        <p class="text-xs text-purple-300">By ᵛˣᴊʜᴏɴᴀᴛʜx15</p>
-                    </div>
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                    ${state.user ? `
-                        <button onclick="state.view='home'; render()" class="px-3 py-2 bg-purple-600 rounded-lg font-bold hover:bg-purple-700 text-sm">🏠</button>
-                        <button onclick="state.view='dashboard'; render()" class="px-3 py-2 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 text-sm">⚡</button>
-                        <button onclick="logout()" class="px-3 py-2 bg-red-600 rounded-lg font-bold hover:bg-red-700 text-sm">👋</button>
-                    ` : `
-                        <button onclick="state.view='login'; render()" class="px-3 py-2 bg-green-600 rounded-lg font-bold hover:bg-green-700 text-sm">🔐 Entrar</button>
-                        <button onclick="state.view='register'; render()" class="px-3 py-2 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 text-sm">✨ Registro</button>
-                    `}
-                </div>
-            </div>
-        </nav>
-    `;
+// --- Componentes ---
+function Header(){
+    return `<nav class="bg-black bg-opacity-60 backdrop-blur-xl border-b-2 border-purple-500 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center flex-wrap gap-3">
+    <div class="flex items-center space-x-3">
+        <span class="text-3xl animate-float">💬</span>
+        <div>
+            <h1 class="text-xl md:text-2xl font-black glow">Grupos Community</h1>
+            <p class="text-xs text-purple-300">By ᵛˣᴊʜᴏɴᴀᴛʜx15</p>
+        </div>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+        ${state.user?`<button onclick="state.view='home';render()" class="px-3 py-2 bg-purple-600 rounded-lg font-bold hover:bg-purple-700 text-sm">🏠</button>
+        <button onclick="state.view='dashboard';render()" class="px-3 py-2 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 text-sm">⚡</button>
+        <button onclick="logout()" class="px-3 py-2 bg-red-600 rounded-lg font-bold hover:bg-red-700 text-sm">👋</button>`:
+        `<button onclick="state.view='login';render()" class="px-3 py-2 bg-green-600 rounded-lg font-bold hover:bg-green-700 text-sm">🔐 Entrar</button>
+        <button onclick="state.view='register';render()" class="px-3 py-2 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 text-sm">✨ Registro</button>`}
+    </div></div></nav>`;
 }
 
-function GroupCard(g) {
+function GroupCard(g){
     const color = g.type==='whatsapp'?'green':'purple';
-    return `
-        <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 hover:scale-105 transition-all shadow-2xl border-2 border-${color}-500">
-            <div class="flex items-start justify-between mb-3">
-                <span class="px-3 py-1 rounded-full text-xs font-bold bg-${color}-500">${g.type==='whatsapp'?'📱 WhatsApp':'🎮 Discord'}</span>
-                ${g.cat?`<span class="px-3 py-1 rounded-full text-xs bg-blue-500 font-bold">${g.cat}</span>`:''}
-            </div>
-            <h4 class="text-xl md:text-2xl font-black mb-3">${g.name}</h4>
-            <p class="text-gray-300 text-sm mb-4">${g.desc||'Sin descripción'}</p>
-            <div class="flex items-center justify-between text-xs text-gray-400 mb-4 pb-4 border-b border-gray-700">
-                <div><span>👤</span> <span class="font-semibold">${g.owner}</span></div>
-                <div><span>📅</span> <span>${g.date}</span></div>
-            </div>
-            <a href="${g.link}" target="_blank" class="block w-full text-center bg-${color}-600 hover:bg-${color}-700 text-white font-black py-3 rounded-xl transition text-lg">
-                🚀 Unirse
-            </a>
+    return `<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 hover:scale-105 transition-all shadow-2xl border-2 border-${color}-500">
+        <div class="flex items-start justify-between mb-3">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-${color}-500">${g.type==='whatsapp'?'📱 WhatsApp':'🎮 Discord'}</span>
+            ${g.cat?`<span class="px-3 py-1 rounded-full text-xs bg-blue-500 font-bold">${g.cat}</span>`:''}
         </div>
-    `;
+        <h4 class="text-xl md:text-2xl font-black mb-3">${g.name}</h4>
+        <p class="text-gray-300 text-sm mb-4">${g.desc||'Sin descripción'}</p>
+        <div class="flex items-center justify-between text-xs text-gray-400 mb-4 pb-4 border-b border-gray-700">
+            <div><span>👤</span> <span class="font-semibold">${g.owner}</span></div>
+            <div><span>📅</span> <span>${g.date}</span></div>
+        </div>
+        <div class="flex gap-2">
+            <a href="${g.link}" target="_blank" class="flex-1 text-center bg-${color}-600 hover:bg-${color}-700 text-white font-black py-2 rounded-xl transition text-lg">🚀 Unirse</a>
+            ${g.owner===state.user?`<button onclick="editGroup(${JSON.stringify(g)})" class="bg-yellow-500 hover:bg-yellow-600 px-2 rounded-lg">✏️</button>
+            <button onclick="deleteGroup(${g.id},'${g.type}')" class="bg-red-600 hover:bg-red-700 px-2 rounded-lg">🗑️</button>`:''}
+        </div>
+    </div>`;
 }
 
-function HomePage() {
-    const total = DB.get('totalPosts')||0;
-    return `
-        <div class="max-w-7xl mx-auto px-4 py-8">
-            <div class="text-center mb-12 py-8">
-                <span class="text-6xl animate-float inline-block">👑</span>
-                <h1 class="text-4xl md:text-5xl font-black mb-3 glow bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-                    Grupos WhatsApp y Discord Públicos
-                </h1>
-                <p class="text-lg md:text-xl text-gray-300 mb-2">Sitio oficial de <span class="text-purple-400 font-bold">ᵛˣᴊʜᴏɴᴀᴛʜx15</span></p>
-                <p class="text-gray-400">Descubre comunidades de gaming, estudio, anime, música y más</p>
-                <p class="mt-2 text-gray-300 font-bold">Total publicaciones: ${total}</p>
-            </div>
-
-            <div class="mb-16">
-                <div class="text-center mb-8">
-                    <div class="inline-flex items-center space-x-3 px-6 py-3 bg-green-600 rounded-full shadow-2xl">
-                        <span class="text-3xl">📱</span>
-                        <h2 class="text-2xl md:text-3xl font-black">Grupos de WhatsApp Públicos</h2>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${state.groups.whatsapp.length===0?'<div class="col-span-full text-center py-12 bg-gray-800 rounded-2xl"><p class="text-gray-400">🔍 No hay grupos todavía<br><span class="text-sm">¡Sé el primero!</span></p></div>':state.groups.whatsapp.map(g=>GroupCard(g)).join('')}
-                </div>
-            </div>
-
-            <div class="mb-16">
-                <div class="text-center mb-8">
-                    <div class="inline-flex items-center space-x-3 px-6 py-3 bg-purple-600 rounded-full shadow-2xl">
-                        <span class="text-3xl">🎮</span>
-                        <h2 class="text-2xl md:text-3xl font-black">Servidores de Discord Públicos</h2>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${state.groups.discord.length===0?'<div class="col-span-full text-center py-12 bg-gray-800 rounded-2xl"><p class="text-gray-400">🔍 No hay servidores todavía<br><span class="text-sm">¡Sé el primero!</span></p></div>':state.groups.discord.map(g=>GroupCard(g)).join('')}
-                </div>
-            </div>
-
-            <div class="text-center py-8 border-t border-purple-500">
-                <p class="text-gray-400">Creado con 💜 por <span class="text-purple-400 font-bold glow">ᵛˣᴊʜᴏɴᴀᴛʜx15</span></p>
+// --- Vistas ---
+function HomePage(){
+    const total=DB.get('totalPosts')||0;
+    return `<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="text-center mb-12 py-8">
+        <span class="text-6xl animate-float inline-block">👑</span>
+        <h1 class="text-4xl md:text-5xl font-black mb-3 glow bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+        Grupos WhatsApp y Discord Públicos</h1>
+        <p class="text-lg md:text-xl text-gray-300 mb-2">Sitio oficial de <span class="text-purple-400 font-bold">ᵛˣᴊʜᴏɴᴀᴛʜx15</span></p>
+        <p class="text-gray-400">Descubre comunidades de gaming, estudio, anime, música y más</p>
+        <p class="mt-2 text-gray-300 font-bold">Total publicaciones: ${total}</p>
+    </div>
+    <div class="mb-16">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center space-x-3 px-6 py-3 bg-green-600 rounded-full shadow-2xl">
+                <span class="text-3xl">📱</span>
+                <h2 class="text-2xl md:text-3xl font-black">Grupos de WhatsApp Públicos</h2>
             </div>
         </div>
-    `;
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        ${state.groups.whatsapp.length===0?'<div class="col-span-full text-center py-12 bg-gray-800 rounded-2xl"><p class="text-gray-400">🔍 No hay grupos todavía<br><span class="text-sm">¡Sé el primero!</span></p></div>':state.groups.whatsapp.map(g=>GroupCard(g)).join('')}
+        </div>
+    </div>
+    <div class="mb-16">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center space-x-3 px-6 py-3 bg-purple-600 rounded-full shadow-2xl">
+                <span class="text-3xl">🎮</span>
+                <h2 class="text-2xl md:text-3xl font-black">Servidores de Discord Públicos</h2>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        ${state.groups.discord.length===0?'<div class="col-span-full text-center py-12 bg-gray-800 rounded-2xl"><p class="text-gray-400">🔍 No hay servidores todavía<br><span class="text-sm">¡Sé el primero!</span></p></div>':state.groups.discord.map(g=>GroupCard(g)).join('')}
+        </div>
+    </div>
+    </div>`;
 }
 
-// --- Dashboard y Login/Register (igual que tu código original, omitido para brevedad) ---
-
-function render() {
-    const views = { home: HomePage }; // Aquí puedes agregar login, dashboard si quieres
-    document.getElementById('app').innerHTML = Header() + views[state.view]();
+function LoginPage(){ 
+return `<div class="min-h-screen flex items-center justify-center px-4">
+<div class="max-w-md w-full">
+<div class="text-center mb-8"><span class="text-6xl inline-block animate-float">🔐</span>
+<h2 class="text-4xl font-black mt-4 glow">Iniciar Sesión</h2></div>
+<div class="bg-gray-800 rounded-3xl p-8 shadow-2xl border-2 border-purple-500">
+<div class="space-y-5">
+<div><label class="block text-sm font-bold mb-2 text-purple-300">👤 Usuario</label>
+<input type="text" placeholder="Tu usuario" value="${state.form.username}" oninput="state.form.username=this.value" class="w-full px-4 py-4 bg-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-500 text-white font-semibold"/></div>
+<div><label class="block text-sm font-bold mb-2 text-purple-300">🔒 Contraseña</label>
+<input type="password" placeholder="Tu contraseña" value="${state.form.password}" oninput="state.form.password=this.value" onkeypress="if(event.key==='Enter') login()" class="w-full px-4 py-4 bg-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-500 text-white font-semibold"/></div>
+<button onclick="login()" class="w-full py-4 bg-green-600 hover:bg-green-700 rounded-xl font-black text-lg transition">✨ ENTRAR</button>
+<div class="text-center pt-4 border-t border-gray-700">
+<p class="text-gray-400 mb-3">¿No tienes cuenta?</p>
+<button onclick="state.view='register'; render()" class="text-purple-400 font-bold hover:underline text-lg">📝 Regístrate aquí</button>
+</div></div></div></div></div>`;
 }
 
+function RegisterPage(){ 
+return `<div class="min-h-screen flex items-center justify-center px-4">
+<div class="max-w-md w-full">
+<div class="text-center mb-8"><span class="text-6xl inline-block animate-float">✨</span>
+<h2 class="text-4xl font-black mt-4 glow">Crear Cuenta</h2><p class="text-gray-400 mt-2">Únete a la comunidad</p></div>
+<div class="bg-gray-800 rounded-3xl p-8 shadow-2xl border-2 border-purple-500">
+<div class="space-y-5">
+<div><label class="block text-sm font-bold mb-2 text-purple-300">👤 Usuario</label>
+<input type="text" placeholder="Elige tu usuario" value="${state.form.username}" oninput="state.form.username=this.value" class="w-full px-4 py-4 bg-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-500 text-white font-semibold"/></div>
+<div><label class="block text-sm font-bold mb-2 text-purple-300">🔒 Contraseña</label>
+<input type="password" placeholder="Crea tu contraseña" value="${state.form.password}" oninput="state.form.password=this.value" onkeypress="if(event.key==='Enter') register()" class="w-full px-4 py-4 bg-gray-900 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-500 text-white font-semibold"/></div>
+<button onclick="register()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-black text-lg transition">📝 REGISTRAR</button>
+<div class="text-center pt-4 border-t border-gray-700">
+<p class="text-gray-400 mb-3">¿Ya tienes cuenta?</p>
+<button onclick="state.view='login'; render()" class="text-green-400 font-bold hover:underline text-lg">🔐 Inicia sesión</button>
+</div></div></div></div></div>`;
+}
+
+// --- Dashboard ---
+function DashboardPage(){
+return `<div class="max-w-7xl mx-auto px-4 py-8">
+<h2 class="text-3xl font-black glow mb-6">📌 Publicar un grupo</h2>
+<div class="bg-gray-800 rounded-3xl p-6 shadow-2xl border-2 border-purple-500 space-y-4">
+<input type="text" placeholder="Nombre del grupo" value="${state.gform.name}" oninput="state.gform.name=this.value" class="w-full px-4 py-3 rounded-xl bg-gray-900 focus:outline-none text-white"/>
+<input type="text" placeholder="Enlace del grupo" value="${state.gform.link}" oninput="state.gform.link=this.value" class="w-full px-4 py-3 rounded-xl bg-gray-900 focus:outline-none text-white"/>
+<input type="text" placeholder="Descripción (opcional)" value="${state.gform.desc}" oninput="state.gform.desc=this.value" class="w-full px-4 py-3 rounded-xl bg-gray-900 focus:outline-none text-white"/>
+<input type="text" placeholder="Categoría (opcional)" value="${state.gform.cat}" oninput="state.gform.cat=this.value" class="w-full px-4 py-3 rounded-xl bg-gray-900 focus:outline-none text-white"/>
+<select class="w-full px-4 py-3 rounded-xl bg-gray-900 focus:outline-none text-white" onchange="state.gform.type=this.value">
+<option value="whatsapp" ${state.gform.type==='whatsapp'?'selected':''}>WhatsApp</option>
+<option value="discord" ${state.gform.type==='discord'?'selected':''}>Discord</option>
+</select>
+<button onclick="addGroup()" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-black text-lg mt-3">📢 Publicar</button>
+</div>
+</div>`;
+}
+
+// --- Render ---
+function render(){
+document.getElementById('app').innerHTML=Header()+(
+    state.view==='home'?HomePage():(state.view==='login'?LoginPage():(state.view==='register'?RegisterPage():DashboardPage()))
+);
+}
 render();
 </script>
 </body>
